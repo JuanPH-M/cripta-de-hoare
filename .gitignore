@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Datos locales del juego
+ranking.json
+
+# Compilación (PyInstaller)
+build/
+dist/
+*.spec
+

@@ -1,0 +1,15 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.sh text eol=lf
+
+# Solo Python cuenta como lenguaje del repositorio
+*.md linguist-documentation
+docs/** linguist-documentation
+.devcontainer/** linguist-vendored
+*.bat linguist-vendored
+*.sh linguist-vendored
+*.yml linguist-vendored
+
+# Binarios
+*.docx binary
+*.exe binary
