@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  exe-windows:
+    runs-on: windows-latest
+    env:
+      SDL_VIDEODRIVER: dummy
+      SDL_AUDIODRIVER: dummy
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements.txt pyinstaller
+
+      - name: Pruebas antes de compilar
+        run: python -m unittest discover -s tests -t .
+
+      # El juego no usa archivos de recursos (sprites, audio y música se generan en código);
+      # se incluye el paquete "juego" completo para que no falte ningún módulo.
+      - name: Compilar el .exe
+        run: >
+          pyinstaller --noconfirm --clean --onefile --windowed
+          --name CriptaDeHoare
+          --collect-submodules juego
+          main.py
+
+      - name: Comprobar el .exe y calcular su SHA-256
+        shell: pwsh
+        run: |
+          $exe = Get-Item dist/CriptaDeHoare.exe
+          "Tamaño: {0:N1} MB" -f ($exe.Length / 1MB)
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  CriptaDeHoare.exe" | Out-File -Encoding ascii dist/CriptaDeHoare.exe.sha256
+          "SHA-256: $hash"
+
+      - name: Publicar el Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/CriptaDeHoare.exe
+            dist/CriptaDeHoare.exe.sha256
+          name: Cripta de Hoare ${{ github.ref_name }}
+          body: |
+            Ejecutable de Windows (no requiere instalar Python).
+            Descarga `CriptaDeHoare.exe` y ábrelo con doble clic. Si Windows SmartScreen avisa,
+            pulsa "Más información" → "Ejecutar de todas formas" (el ejecutable no está firmado).
+            El ranking se guarda en `ranking.json` junto al .exe.
+
+            Para comprobar que el archivo no fue alterado, compara su SHA-256 con `CriptaDeHoare.exe.sha256`
+            (en PowerShell: `Get-FileHash CriptaDeHoare.exe`). El juego no usa internet ni lee datos personales.
